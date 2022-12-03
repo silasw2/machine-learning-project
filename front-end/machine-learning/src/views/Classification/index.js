@@ -6,9 +6,6 @@ import * as tf from "@tensorflow/tfjs";
 import * as Device from "expo-device";
 import * as MobileNet from "@tensorflow-models/mobilenet";
 
-import { LogBox } from "react-native";
-LogBox.ignoreAllLogs(); //Ignore all log notifications
-
 const TensorCamera = cameraWithTensors(Camera);
 
 const initialiseTensorflow = async () => {
@@ -29,7 +26,7 @@ if (Device.manufacturer == "Apple") {
   };
 }
 
-export default function App() {
+export default function Classification() {
   const [loading, setLoading] = useState(true);
   const [currentModel, setCurrentModel] = useState(null);
   const [hasCameraPermission, setHasCameraPermission] = useState(null);
@@ -42,7 +39,6 @@ export default function App() {
       const cameraStatus = await Camera.requestCameraPermissionsAsync();
       setCurrentModel(await MobileNet.load());
       setHasCameraPermission(cameraStatus.granted);
-
       setLoading(false);
     })();
   }, []);
@@ -55,7 +51,12 @@ export default function App() {
           await currentModel
             .classify(nextImageTensor)
             .then((classifications) => {
-              setPredictions(classifications);
+              let probabilityArray = classifications.map((classification) => {
+                return classification.probability
+              });
+              if (probabilityArray.some((val) => {return val > 0.2})) {
+                setPredictions(classifications);
+              }
             });
           tf.dispose([nextImageTensor]);
         }
@@ -68,17 +69,23 @@ export default function App() {
 
   let content;
   if (loading) {
-    content = <Text style={{ color: "#ffffff" }}>Loading</Text>;
+    content = (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ color: "black" }}>Loading</Text>
+      </View>
+    );
   } else if (!hasCameraPermission && !loading) {
     content = (
-      <Text style={{ color: "#ffffff" }}>
-        Expo does not have Camera Permissions
-      </Text>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ color: "black" }}>
+          Expo does not have Camera Permissions
+        </Text>
+      </View>
     );
   } else {
     content = (
       <>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: "black" }}>
           <TensorCamera
             // Standard Camera props
             style={{ flex: 1 }}
@@ -86,8 +93,8 @@ export default function App() {
             // Tensor related props
             cameraTextureHeight={textureDims.height}
             cameraTextureWidth={textureDims.width}
-            resizeHeight={512}
-            resizeWidth={512}
+            resizeHeight={128}
+            resizeWidth={128}
             resizeDepth={3}
             onReady={handleCameraStream}
             autorender={true}
@@ -113,7 +120,7 @@ export default function App() {
             >
               <Text>Detections:</Text>
               {predictions.map((prediction) => {
-                if (prediction.probability > 0.5) {
+                if (prediction.probability > 0.2) {
                   return <Text>{prediction.className}</Text>;
                 }
               })}
@@ -124,9 +131,5 @@ export default function App() {
     );
   }
 
-  return (
-    <View style={{ width: "100%", height: "90%", backgroundColor: "#000000" }}>
-      {content}
-    </View>
-  );
+  return content;
 }

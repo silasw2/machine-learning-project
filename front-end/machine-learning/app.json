@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "machine-learning-app",
-    "slug": "machine-learning-app",
+    "name": "machine-learning",
+    "slug": "machine-learning",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
