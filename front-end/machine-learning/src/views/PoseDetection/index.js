@@ -57,8 +57,7 @@ export default function PoseDetection() {
       if (currentModel) {
         const nextImageTensor = images.next().value;
         if (nextImageTensor) {
-          let tempPoses = await currentModel.estimatePoses(nextImageTensor);
-          setPoses(tempPoses);
+          setPoses(await currentModel.estimatePoses(nextImageTensor));
           tf.dispose([nextImageTensor]);
         }
       }
